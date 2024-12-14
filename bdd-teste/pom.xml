@@ -60,8 +60,19 @@
           <version>3.8.0</version>
         </plugin>
         <plugin>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.22.1</version>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>3.0.0-M5</version>
+            <configuration>
+                <includes>
+                    <include>**/*Test.java</include>
+                </includes>
+                <properties>
+                    <property>
+                        <name>cucumber.options</name>
+                        <value>--plugin pretty --glue dev.anneaguiar.steps src/main/resources/features</value> <!-- Ajuste conforme seu caminho -->
+                    </property>
+                </properties>
+            </configuration>
         </plugin>
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>
