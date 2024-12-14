@@ -1,5 +1,5 @@
 pipeline {
-    agent any // Use 'any' se o Docker não estiver configurado corretamente no Jenkins
+    agent any // Use 'any' para um ambiente genérico
     environment {
         GH_REF = 'github.com/anneaguiar/desafio-teste-bdd'
         GITHUB_API_KEY = credentials('github-api-token') // Credencial no Jenkins
@@ -15,14 +15,28 @@ pipeline {
                 script {
                     if (isUnix()) {
                         sh '''
+                        cd bdd-teste
                         mvn clean test
                         mvn verify
                         '''
                     } else {
                         bat '''
+                        cd bdd-teste
                         mvn clean test
                         mvn verify
                         '''
+                    }
+                }
+            }
+        }
+        stage('Check Test Results') {
+            steps {
+                script {
+                    def result = currentBuild.result
+                    if (result == 'SUCCESS') {
+                        echo "Tests passed, proceeding with report generation."
+                    } else {
+                        error "Tests failed, stopping the pipeline."
                     }
                 }
             }
@@ -33,12 +47,12 @@ pipeline {
                     if (isUnix()) {
                         sh '''
                         mkdir -p /var/jenkins_reports
-                        cp -R target/site/cucumber-html-reports/* /var/jenkins_reports/
+                        cp -R bdd-teste/target/site/cucumber-html-reports/* /var/jenkins_reports/
                         '''
                     } else {
                         bat '''
                         if not exist "\\var\\jenkins_reports" mkdir "\\var\\jenkins_reports"
-                        copy /Y target\\site\\cucumber-html-reports\\* \\var\\jenkins_reports
+                        copy /Y bdd-teste\\target\\site\\cucumber-html-reports\\* \\var\\jenkins_reports
                         '''
                     }
                 }
@@ -49,6 +63,7 @@ pipeline {
                 script {
                     if (isUnix()) {
                         sh '''
+                        cd bdd-teste
                         git init
                         git config user.name "GitCI"
                         git config user.email "git@git.org"
@@ -58,6 +73,7 @@ pipeline {
                         '''
                     } else {
                         bat '''
+                        cd bdd-teste
                         git init
                         git config user.name "GitCI"
                         git config user.email "git@git.org"
@@ -72,11 +88,11 @@ pipeline {
     }
     post {
         always {
-            archiveArtifacts artifacts: 'target/site/cucumber-html-reports/*', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'bdd-teste/target/site/cucumber-html-reports/*', allowEmptyArchive: true
             publishHTML(target: [
                 allowMissing: false,
                 keepAll: true,
-                reportDir: 'target/site/cucumber-html-reports',
+                reportDir: 'bdd-teste/target/site/cucumber-html-reports',
                 reportFiles: 'index.html',
                 reportName: 'BDD Report'
             ])
